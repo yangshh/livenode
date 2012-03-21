@@ -5,6 +5,7 @@ BITS =
 ifeq "$(findstring x86_64,$(ARCH))" "x86_64"
 BITS = 64
 endif
+$(shell mkdir -p objs) 
 #版本
 LIVE_VERSION = 0.5
 _LIVE_VERSION = \"$(LIVE_VERSION)\"
