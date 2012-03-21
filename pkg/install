@@ -1,0 +1,26 @@
+#!/bin/bash
+echo "Start Installation ..."
+LIVEDIR="/usr/local/reach"
+RCD="/etc/rc.d"
+INITD="$RCD/init.d"
+RC3D="$RCD/rc3.d"
+RC5D="$RCD/rc5.d"
+mkdir -p $LIVEDIR
+mkdir -p $INITD
+cp -rf lives $LIVEDIR
+cp -rf lived $LIVEDIR
+cp -rf livesd $INITD
+ln -s $INITD/livesd $RC3D/S99livesd 
+ln -s $INITD/livesd $RC5D/S99livesd
+ln -s $INITD/livesd $RCD/livesd
+
+ls -l $LIVEDIR 
+ls -l $INITD/livesd
+ls -l $RC3D/S99livesd
+ls -l $RC5D/S99livesd
+ls -l $RCD/livesd
+echo "Finish!" 
+echo "Start run ..."
+killall -9 lives
+killall -9 lived
+$LIVEDIR/lived&

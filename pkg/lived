@@ -1,0 +1,3 @@
+#!/bin/bash
+nice --adjustment=-20 /usr/local/reach/lives > /dev/null
+kill $$

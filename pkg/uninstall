@@ -1,0 +1,13 @@
+#!/bin/bash
+echo "Start Uninstallation ..."
+LIVEDIR="/usr/local/reach"
+INITD="/etc/rc.d"
+RC3D="/etc/rc.d/rc3.d"
+RC5D="/etc/rc.d/rc5.d"
+killall -9 lived
+killall -9 lives
+rm -rf $LIVEDIR
+rm -rf $RC3D/S99livesd 
+rm -rf $RC5D/S99livesd 
+rm -rf $INITD/livesd
+echo "Finish!"

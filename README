@@ -1,0 +1,22 @@
+编译平台信息：
+64:(suse10-64)
+gcc -v
+
+32:()
+gcc -v
+
+依赖静态库信息：
+libxml2 -version 2.5.6 
+libcurl -version 7.23.1
+
+编译：
+make
+封包：
+make pkg
+清除：
+make clean
+安装：
+make install
+文档：
+make doc
+make man
