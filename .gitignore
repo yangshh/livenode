@@ -6,3 +6,4 @@
 *.bz2
 lives
 .svn
+version.h
