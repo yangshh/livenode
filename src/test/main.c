@@ -19,6 +19,7 @@
 #include "events_process.h"
 #include "silverlight_policy.h"
 
+#define	LIVE_VERSION	"0.5"
 
 #if __WORDSIZE == 64
 #define	ARCH	"x86_64"
@@ -99,7 +100,7 @@ void print_live_version_info(void)
 {
 	printf("/*****************************************/\n\n");
 	printf("/* <SZ Reach Tech Co.,Ltd>\n\n");
-	printf("/* [lives.v%s.%s.build%d]\n\n", VERSION, ARCH, BDATE);
+	printf("/* [lives.v%s.%s.build%d]\n\n", LIVE_VERSION, ARCH, BDATE);
 	printf("/*****************************************/\n\n");
 }
 

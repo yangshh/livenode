@@ -7,18 +7,17 @@ BITS = 64
 endif
 $(shell mkdir -p objs) 
 #版本
-LIVE_VERSION = 0.5
-_LIVE_VERSION = \"$(LIVE_VERSION)\"
+VERSION=$(shell grep "LIVE_VERSION" src/test/main.c  |sed 's/"/ /g' |awk '{print $$3}'|sed -e '1!d')
 #日期
 DATE=$(shell date +%Y%m%d)
 # 目标文件名字
 TARGET = lives
-APP = lives.v$(LIVE_VERSION).$(ARCH)
+APP = lives.v$(VERSION).$(ARCH)
 #录播写h264文件
 REC_F = 0
 #指定录播ip
 _ONLY_REC = 0
-_REC_IP=\"192.168.7.119\"
+_REC_IP="\"192.168.7.119\""
 #是否开启HTTP上报或接受信息日志
 _HTTP_RECV_P = 0
 _HTTP_SEND_P = 0
@@ -55,7 +54,16 @@ LIBS += '-Wl,--start-group' $(LOCAL_LIBS) '-Wl,--end-group'
 # 编译选项
 #CFLAGS = -g -Wall
 CFLAGS := -O2 -Wall -Wno-strict-aliasing 
-all:$(TARGET)
+all:new_header $(TARGET)
+new_header:
+	@sed -e "s#<version>#$$(git describe --dirty --always)#g" < version.h.in > version.h.tmp
+	@if diff -q version.h.tmp version.h >/dev/null 2>&1; then \
+		rm version.h.tmp; \
+	else \
+		echo "version.h.in => version.h" ; \
+		mv version.h.tmp version.h; \
+	fi
+
 # 定义目标文件生成规则
 $(TARGET):$(OBJS)
 	$(CC) -o $(TARGET) $(OBJS_DEST) $(LIBS)
