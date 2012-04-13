@@ -1,3 +1,4 @@
 #!/bin/bash
+ulimit -HSn 4096
 nice --adjustment=-20 /usr/local/reach/lives > /dev/null
 kill $$

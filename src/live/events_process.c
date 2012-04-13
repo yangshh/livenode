@@ -7,7 +7,7 @@
 #include "media_msg.h"
 #include "key.h"
 #include "local_data.h"
-
+#include "live_cfg.h"
 static int32_t events_data_process(int32_t ev_datafd, int32_t net_listenfd, int32_t local_listenfd,  int32_t epfd, ev_t *ev)
 {
 	sockaddr_in_t clientaddr;
@@ -111,25 +111,26 @@ static int32_t events_ev_process(uint32_t events, int32_t ev_datafd)
 void* events_process(void *arg)
 {
 	int32_t i;
-	//int32_t c = 0;
 	int32_t net_listenfd = -1, local_data_listenfd = -1;
-//	int32_t net_connfd = -1,  local_data_connfd = -1;
 	int32_t epfd, nfds;
-//	socklen_t clilen;
-//	user_t *user_handle;
+	int8_t local_ip[IP_LEN] = {0};
+	int8_t *ifname = NULL;
+	ifname = get_live_cfg_NetCard();
+	if(get_local_ip(ifname, local_ip) < 0) {
+		printf("[events_process] ----error----- [%s:%s]\n", ifname, local_ip);
+	}
+		
 	//声明epoll_event结构体的变量,ev用于注册事件,数组用于回传要处理的事件
 	ev_t ev, events[EV_COUNT];
 	//生成用于处理accept的epoll专用的文件描述符
 	epfd=epoll_create(MAX_EPOLL_FD);
-//	sockaddr_in_t clientaddr;
-//	sockaddr_un_t local_clientaddr;
 
 	unlink(LOACAL_DATA_MSG);
 	local_data_listenfd = socket(AF_LOCAL, SOCK_STREAM, 0);
 	net_listenfd = socket(AF_INET, SOCK_STREAM, 0);
 	printf("[events_process] local_data_listenfd : [%d], net_listenfd : [%d]\n", local_data_listenfd, net_listenfd);
 	add_local_listen_epoll_event(epfd, &ev, local_data_listenfd, LOACAL_DATA_MSG);
-	add_net_listen_epoll_event(epfd, &ev, net_listenfd, (int8_t *)SERV_IP, USER_PORT);
+	add_net_listen_epoll_event(epfd, &ev, net_listenfd, local_ip, USER_PORT);
 
 	while(1) {
 		//等待epoll事件的发生
@@ -150,123 +151,5 @@ void* events_process(void *arg)
 	return NULL;
 }
 
-#if 0
-void *events_process(void *arg)
-{
-	int32_t i;
-	//int32_t c = 0;
-	int32_t net_listenfd = -1, local_data_listenfd = -1;
-	int32_t net_connfd = -1,  local_data_connfd = -1;
-	int32_t epfd, nfds;
-	socklen_t clilen;
-	user_t *user_handle;
-	//声明epoll_event结构体的变量,ev用于注册事件,数组用于回传要处理的事件
-	ev_t ev, events[EV_COUNT];
-	//生成用于处理accept的epoll专用的文件描述符
-	epfd = epoll_create(MAX_EPOLL_FD);
-	sockaddr_in_t clientaddr;
-	sockaddr_un_t local_clientaddr;
-
-	unlink(LOACAL_DATA_MSG);
-	local_data_listenfd = socket(AF_LOCAL, SOCK_STREAM, 0);
-	net_listenfd = socket(AF_INET, SOCK_STREAM, 0);
-	printf("[events_process] local_data_listenfd : [%d], net_listenfd : [%d]\n", local_data_listenfd, net_listenfd);
-	add_local_listen_epoll_event(epfd, &ev, local_data_listenfd, LOACAL_DATA_MSG);
-	add_net_listen_epoll_event(epfd, &ev, net_listenfd, (int8_t *)SERV_IP, USER_PORT);
-
-	while(1) {
-		//等待epoll事件的发生
-		nfds = epoll_wait(epfd, events, EV_COUNT, EV_TIMEOUT);
-
-		//printf("[events_process] epoll_wait after!!!nfds : [%d]\n", nfds);
-		///处理所发生的所有事件
-		for(i = 0; i < nfds; ++i) {
-			if((events[i].events & EPOLLERR) ||
-			   (events[i].events & EPOLLHUP)) {
-				user_handle = find_user_handle(events[i].data.fd);
-				printf("[events_process] epoll_wait error!!! fd : [%d] [%p]\n", events[i].data.fd, user_handle);
-
-				if(NULL != user_handle) {
-					close_client(user_handle);
-				} else {
-					close_socket(events[i].data.fd);
-				}
-
-				continue;
-			}
-
-			if(events[i].data.fd == net_listenfd) {
-				printf("[events_process] net_listenfd : [%d]\n", net_listenfd);
-
-				while(1) {
-					clilen = sizeof(sockaddr_in_t);
-					net_connfd = accept(net_listenfd, (sa_t *)&clientaddr, &clilen);
-
-					if(net_connfd < 0) {
-						printf("[events_process] errno : %d\n", errno);
-						//perror("[events_process] net_listenfd  accept");
-						break;
-					}
-
-					set_nonblocking(net_connfd);
-					char *ip = inet_ntoa(clientaddr.sin_addr);
-					printf("client ip : [%s][%d]\n", ip, net_connfd);
-					printf(" ---------------------EPOLLIN|EPOLLOUT|EPOLLET = %d \n", net_connfd);
-					add_net_client_info_table(epfd, net_connfd, &ev, EPOLLIN | EPOLLOUT | EPOLLET, ip);
-				}
-			} else if(events[i].data.fd == local_data_listenfd) {
-				printf("[events_process] local_data_listenfd : [%d]\n", local_data_listenfd);
-
-				while(1) {
-					clilen = sizeof(sockaddr_un_t);
-					local_data_connfd = accept(local_data_listenfd, (sa_t *)&local_clientaddr, &clilen);
-
-					if(local_data_connfd < 0) {
-						//perror("accept");
-						break;
-					}
-
-					set_nonblocking(local_data_connfd);
-					printf("client path :[%d] [%s] [%d]\n", local_data_connfd, local_clientaddr.sun_path, clilen);
-					user_handle = find_user_handle(local_data_connfd);
-
-					if(NULL == user_handle) {
-						add_local_client_info_table(epfd, local_data_connfd, &ev, EPOLLIN | EPOLLET);
-					}
-
-				}
-			}
-
-			if(events[i].events & EPOLLIN) {
-				//printf("[epoll_wait]EPOLLIN !!!\n ");
-				user_handle = find_user_handle(events[i].data.fd);
-
-				if(NULL != user_handle) {
-					if(user_handle->recv_process) {
-						//printf("[events_process] recv_process XXXXXXXX\n");
-						user_handle->recv_process(user_handle);
-					}
-
-					send_user_process();
-					//printf("[events_process] send_user_process 000000000000000\n");
-				}
-			}
-
-			if(events[i].events & EPOLLOUT) {
-				//	printf("[events_process]EPOLLOUT !!!\n ");
-				user_handle = find_user_handle(events[i].data.fd);
-
-				if(NULL != user_handle)  {
-					if(user_handle->send_process) {
-						user_handle->send_process(user_handle);
-					}
-				}
-			}
-		}
-	}
-//	printf("******\n");
-	return NULL;
-}
-#endif
 
 

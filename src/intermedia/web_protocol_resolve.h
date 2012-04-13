@@ -1,34 +1,26 @@
 #ifndef __FILE_WEB_PROTOCOL_RESOLVE_H
 #define __FILE_WEB_PROTOCOL_RESOLVE_H
 
-#define WEB_G_IP_MSG				"/tmp/web_g_ip_msg.txt"
+#define WEB_G_IP_MSG						"/tmp/web_g_ip_msg.txt"
 
-#include "connect_rec_server.h"
 #include "xml_msg_management.h"
-#include<semaphore.h>
+#include <semaphore.h>
 
+#define	ONE_REPORT_MSG_LEN				(256)	//ÉÏ±¨ÏûÏ¢ÖĞÃ¿¸öÍ¨µÀµÄ³¤¶È
+#define		WEB_MSG_LEN				(ONE_REPORT_MSG_LEN * CHANNEL_CONNECT_MAX_NUM)	//web·¢ËÍÏûÏ¢µÄ³¤¶È
+#define 	WEB_TEMP_MSG_LEN				  10
 
-
-#define	ONE_REPORT_MSG_LEN		(256)	//ÉÏ±¨ÏûÏ¢ÖĞÃ¿¸öÍ¨µÀµÄ³¤¶È
-#define		WEB_MSG_LEN			(ONE_REPORT_MSG_LEN * CHANNEL_CONNECT_MAX_NUM)	//web·¢ËÍÏûÏ¢µÄ³¤¶È
-#define 	WEB_TEMP_MSG_LEN		10
-
-// http MsgCode
-#define    MSGCODE_HTTP_REC_SERV              10001
-#define    MSGCODE_HTTP_LIVE_USERS           10002
-#define    MSGCODE_HTTP_LIVE_CHANNEL       10003
-// tcp MsgCode
-#define    MSGCODE_TCP_REC_SERV                20001
-#define    MSGCODE_TCP_LIVE_CHANNEL         20002
-#define    MSGCODE_TCP_LIVE_USERS             20003
-#define    MSGCODE_TCP_SYS_INFO                 20004
-#define    MSGCODE_TCP_STOP_LIVE               20005
-#define    MSGCODE_TCP_REBOOT_PC             20006
-
-typedef struct 	web_client_infos
-{
-	int32_t	m_client_socket;	//Á¬½ÓÉÏµÄ¿Í»§¶ËµÄsocket
-}web_client_info_t;
+// Ö±²¥½áµãÓëÃ½ÌåÖĞĞÄ½»»¥HTTP Ğ­Òé MsgCode
+#define    MSGCODE_HTTP_REC_SERV                     10001
+#define    MSGCODE_HTTP_LIVE_USERS                  10002
+#define    MSGCODE_HTTP_LIVE_CHANNEL       	  10003
+// Ö±²¥½áµãÓëÃ½ÌåÖĞĞÄ½»»¥TCP Ğ­Òé MsgCode
+#define    MSGCODE_TCP_REC_SERV              	  20001
+#define    MSGCODE_TCP_LIVE_CHANNEL        	  20002
+#define    MSGCODE_TCP_LIVE_USERS             	  20003
+#define    MSGCODE_TCP_SYS_INFO                 	  20004
+#define    MSGCODE_TCP_STOP_LIVE               	  20005
+#define    MSGCODE_TCP_REBOOT_PC             	  20006
 
 typedef struct      web_client_infos_ex
 {
@@ -43,200 +35,196 @@ typedef struct	web_global_vaiables
 
 // zhengyb add 12_2_2
 
-/**
-* @brief Í¨¹ıÈ«¾Ö±äÁ¿»ñÈ¡Ã½ÌåÖĞĞÄµØÖ·
-* @param  [OUT] ip Ã½ÌåÖĞĞÄµØÖ·
-* @param  [IN] NULL
-* @exception  -1
-* @return ³É¹¦1 Ê§°Ü·µ»Ø0
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: get_web_url()
+**º¯Êı¹¦ÄÜ: Í¨¹ıÈ«¾Ö±äÁ¿g_web_ip »ñÈ¡Ã½ÌåÖĞĞÄµØÖ·
+**ÊäÈë²ÎÊı: NULL	
+**Êä³ö²ÎÊı:  ip ---Ã½ÌåÖĞĞÄµØÖ·
+**·µ»ØÖµ       :  ³É¹¦·µ»Ø0 	Ê§°Ü·µ»Ø-1
+****************************************************************************
 */
 int32_t get_web_url(char *ip);
 
-/**
-* @brief »ñÈ¡±¾µØÍø¿¨(ETH_NAME ºê¶¨ÒåÍø¿¨)µÄIP ÎªÖ±²¥½áµãIP
-* @param  [OUT]Ö±²¥½áµãIP
-* @param  [IN] NULL
-* @exception  -1
-* @return ³É¹¦0 Ê§°Ü·µ»Ø-1
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: set_wet_url()
+**º¯Êı¹¦ÄÜ: Ã¿´ÎÃ½ÌåÖĞĞÄÁ¬½ÓÖ±²¥½áµãĞèÒª¶ÔÃ½ÌåÖĞĞÄµØÖ·½øĞĞÅĞ±ğ´¦Àí
+**ÊäÈë²ÎÊı:  ip---Ã½ÌåÖĞĞÄµØÖ·	
+**Êä³ö²ÎÊı:  NULL
+**·µ»ØÖµ       :  ³É¹¦·µ»Ø0 	Ê§°Ü·µ»Ø-1
+****************************************************************************
 */
-int32_t fine_local_ip(char *ip);
+int32_t set_wet_url(char *ip,void *vag);
 
-/**
-* @brief Ö±²¥½áµãÑ­»·ÉÏ±¨Ö´ĞĞº¯Êı
-* @param  [OUT] NULL
-* @param  [IN] NULL
-* @exception  -1
-* @return NULL
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: judge_user_channel_http_report()
+**º¯Êı¹¦ÄÜ: Ö±²¥½áµãÑ­»·ÉÏ±¨Ö´ĞĞº¯Êı
+**ÊäÈë²ÎÊı: 	NULL
+**Êä³ö²ÎÊı:    NULL
+**·µ»ØÖµ      :    NULL
+****************************************************************************
 */
 void judge_user_channel_http_report();
 
-
-
-
-/**
-* @brief ±éÀúÈ«¾Ö±äÁ¿g_connect_info Ñ°ÇóÊı×é¿ÕÏĞÔªËØ
-* @param  [OUT] g_connect_info Êı×éÏÂ±ê
-* @param  [IN] NULL
-* @exception  -1
-* @return ³É¹¦·µ»ØÊı×éÏÂ±êÖµ
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: Traverse_gAmarry_free()
+**º¯Êı¹¦ÄÜ: ±éÀúÈ«¾Ö±äÁ¿g_connect_info Ñ°ÇóÊı×é¿ÕÏĞÔªËØ
+**ÊäÈë²ÎÊı: 	NULL
+**Êä³ö²ÎÊı:    NULL
+**·µ»ØÖµ       :   ³É¹¦·µ»ØÊı×éÏÂ±êÖµ 	Ê§°Ü·µ»Ø-1
+****************************************************************************
 */
 int32_t Traverse_gAmarry_free();
 
-/**
-* @brief ±éÀúÈ«¾Ö±äÁ¿g_connect_info Ñ°Çó´¦ÓÚÁ¬½Ó×´Ì¬ÔªËØ
-* @param  [OUT] g_connect_info Êı×éÏÂ±ê
-* @param  [IN] NULL
-* @exception  -1
-* @return ³É¹¦·µ»ØÊı×éÏÂ±êÖµ
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: Traverse_gAmarry_usd()
+**º¯Êı¹¦ÄÜ: ±éÀúÈ«¾Ö±äÁ¿g_connect_info Ñ°Çó´¦ÓÚÁ¬½Ó×´Ì¬ÔªËØ
+**ÊäÈë²ÎÊı: 	NULL
+**Êä³ö²ÎÊı:    NULL
+**·µ»ØÖµ      :   ³É¹¦·µ»ØÊı×éÏÂ±êÖµ 	Ê§°Ü·µ»Ø-1
+****************************************************************************
 */
 int32_t Traverse_gAmarry_usd();
 
-/**
-* @brief ´¦ÀíÖ±²¥½áµãÓëWEB µÄmsgcode_tcp_rec_serv TCP Ğ­Òé
-* @param  [OUT] p_buffer ·â×°ºóµÄÉÏ±¨ĞÅÏ¢
-* @param  [IN] ½âÎöWEBÏÂ·¢µÄTCP ÇëÇóĞÅÏ¢
-* @exception  -1
-* @return ³É¹¦·µ»Ø0
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: msgcode_tcp_rec_serv_func()
+**º¯Êı¹¦ÄÜ: ´¦ÀíÖ±²¥½áµãÓëWEB µÄmsgcode_tcp_rec_serv TCP Ğ­Òé
+**ÊäÈë²ÎÊı: 	req_msg_room_id ---½âÎöWEBÏÂ·¢µÄTCP ÇëÇóĞÅÏ¢
+**Êä³ö²ÎÊı:   p_buffer ---·â×°ºóµÄÉÏ±¨ĞÅÏ¢
+**·µ»ØÖµ       :  ³É¹¦·µ»Ø0 	Ê§°Ü·µ»Ø-1
+****************************************************************************
 */
 int32_t msgcode_tcp_rec_serv_func(int8_t *p_buffer,req_msg_serv_channel_t 	 req_msg_room_id);
 
-/**
-* @brief ´¦ÀíÖ±²¥½áµãÓëWEB µÄmsgcode_tcp_live_channel TCP Ğ­Òé
-* @param  [OUT] p_buffer ·â×°ºóµÄÉÏ±¨ĞÅÏ¢
-* @param  [IN] ½âÎöWEBÏÂ·¢µÄTCP ÇëÇóĞÅÏ¢
-* @exception  -1
-* @return ³É¹¦·µ»Ø0
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: msgcode_tcp_live_channel_func()
+**º¯Êı¹¦ÄÜ: ´¦ÀíÖ±²¥½áµãÓëWEB µÄmsgcode_tcp_rec_serv TCP Ğ­Òé
+**ÊäÈë²ÎÊı: 	req_msg_room_id ---½âÎöWEBÏÂ·¢µÄTCP ÇëÇóĞÅÏ¢
+**Êä³ö²ÎÊı:   p_buffer ---·â×°ºóµÄÉÏ±¨ĞÅÏ¢
+**·µ»ØÖµ       :  ³É¹¦·µ»Ø0 	
+****************************************************************************
 */
 int32_t msgcode_tcp_live_channel_func(int8_t *p_buffer,req_msg_serv_channel_t 	 req_msg_room_id);
 
-/**
-* @brief ´¦ÀíÖ±²¥½áµãÓëWEB µÄmsgcode_tcp_live_users TCP Ğ­Òé
-* @param  [OUT] p_buffer ·â×°ºóµÄÉÏ±¨ĞÅÏ¢
-* @param  [IN] ½âÎöWEBÏÂ·¢µÄTCP ÇëÇóĞÅÏ¢
-* @exception  -1
-* @return ³É¹¦·µ»Ø0
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: msgcode_tcp_live_users_func()
+**º¯Êı¹¦ÄÜ: ´¦ÀíÖ±²¥½áµãÓëWEB µÄmsgcode_tcp_live_users TCP Ğ­Òéé
+**ÊäÈë²ÎÊı: 	req_msg_room_id ---½âÎöWEBÏÂ·¢µÄTCP ÇëÇóĞÅÏ¢
+**Êä³ö²ÎÊı:   p_buffer ---·â×°ºóµÄÉÏ±¨ĞÅÏ¢
+**·µ»ØÖµ       :  ³É¹¦·µ»Ø0 	
+****************************************************************************
 */
 int32_t msgcode_tcp_live_users_func(int8_t *p_buffer,req_msg_serv_channel_t 	 req_msg_room_id);
 
-/**
-* @brief ´¦ÀíÖ±²¥½áµãÓëWEB µÄ msgcode_tcp_sys_info TCP Ğ­Òé
-* @param  [OUT] p_buffer ·â×°ºóµÄÉÏ±¨ĞÅÏ¢
-* @param  [IN] ½âÎöWEBÏÂ·¢µÄTCP ÇëÇóĞÅÏ¢
-* @exception  -1
-* @return ³É¹¦·µ»Ø0
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: msgcode_tcp_sys_info_func()
+**º¯Êı¹¦ÄÜ:  ´¦ÀíÖ±²¥½áµãÓëWEB µÄ msgcode_tcp_sys_info TCP Ğ­Òé
+**ÊäÈë²ÎÊı: 	req_msg_room_id ---½âÎöWEBÏÂ·¢µÄTCP ÇëÇóĞÅÏ¢
+**Êä³ö²ÎÊı:   p_buffer ---·â×°ºóµÄÉÏ±¨ĞÅÏ¢
+**·µ»ØÖµ       :  ³É¹¦·µ»Ø0 	
+****************************************************************************
 */
 int32_t msgcode_tcp_sys_info_func(int8_t *p_buffer,req_msg_serv_channel_t 	 req_msg_room_id);
 
-/**
-* @brief  ·â×°http post ÇëÇó»ñÈ¡Â¼²¥ĞÅÏ¢Îªxml Ä£Ê½
-* msgcode  -> MSGCODE_HTTP_REC_SERV
-* @param  [OUT] ´æ·Åxml Ä£Ê½Â¼²¥ĞÅÏ¢µÄbuffer 
-* @param  [IN] int8_t *
-* @exception  -1
-* @return ³É¹¦·µ»Ø0
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: package_web_cmd_http_ServInfoReq()
+**º¯Êı¹¦ÄÜ:  ·â×°»ñÈ¡Â¼²¥ĞÅÏ¢µÄHTTP ÉÏ±¨ÇëÇóÎªxml Ä£Ê½
+**ÊäÈë²ÎÊı:  NULL
+**Êä³ö²ÎÊı:   p_buffer ---·â×°ºóµÄÉÏ±¨ĞÅÏ¢
+**·µ»ØÖµ       :  ³É¹¦·µ»Ø0 	
+****************************************************************************
 */
 int32_t package_web_cmd_http_ServInfoReq(int8_t *buffer);
 
-/**
-* @brief  ·â×°http post ÉÏ±¨Ö±²¥ÔÚÏßÓÃ»§ĞÅÏ¢Îªxml Ä£Ê½
-* msgcode  -> MSGCODE_HTTP_LIVE_USERS
-* @param  [OUT] ´æ·Åxml Ä£Ê½ÔÚÏßÓÃ»§ĞÅÏ¢µÄbuffer 
-* @param  [IN] int8_t *
-* @exception  -1
-* @return ³É¹¦·µ»Ø0
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: package_web_cmd_http_LiveUpdateReq()
+**º¯Êı¹¦ÄÜ:  ·â×°Ö±²¥½áµãÔÚÏßÓÃ»§ĞÅÏ¢ÎªHTTPÉÏ±¨ĞÅÏ¢ (xml Ä£Ê½)
+**ÊäÈë²ÎÊı:  NULL
+**Êä³ö²ÎÊı:   p_buffer ---·â×°ºóµÄÉÏ±¨ĞÅÏ¢
+**·µ»ØÖµ       :  ³É¹¦·µ»Ø0 	
+****************************************************************************
 */
 int32_t package_web_cmd_http_LiveUpdateReq(int8_t *buffer);
 
-/**
-* @brief  ·â×°http post ÉÏ±¨Â¼²¥·şÎñÆ÷Í¨µÀĞÅÏ¢Îªxml Ä£Ê½
-* msgcode  -> MSGCODE_HTTP_LIVE_CHANNEL
-* @param  [OUT] ´æ·Åxml Ä£Ê½Â¼²¥·şÎñÆ÷Í¨µÀĞÅÏ¢µÄbuffer 
-* @param  [IN] int8_t *
-* @exception  -1
-* @return ³É¹¦·µ»Ø0
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: package_web_cmd_http_LiverChannelUpdateReq()
+**º¯Êı¹¦ÄÜ:  ·â×°Ö±²¥½áµãÍ¨µÀĞÅÏ¢ÎªHTTPÉÏ±¨ĞÅÏ¢ (xml Ä£Ê½)
+**ÊäÈë²ÎÊı:  NULL
+**Êä³ö²ÎÊı:   p_buffer ---·â×°ºóµÄÉÏ±¨ĞÅÏ¢
+**·µ»ØÖµ       :  ³É¹¦·µ»Ø0 	
+****************************************************************************
 */
 int32_t package_web_cmd_http_LiverChannelUpdateReq(int8_t *buffer);
 
-/**
-* @brief  ½âÎöhttp post Ğ­Òé1  ·µ»ØĞÅÏ¢²¢Á¬½ÓÂ¼²¥·şÎñÆ÷ 
-* msgcode  -> MSGCODE_HTTP_REC_SERV
-* @param  [OUT] NULL
-* @param  [IN] ´æ·Åxml Ä£Ê½Â¼²¥ĞÅÏ¢µÄbuffer 
-* @exception  -1
-* @return ³É¹¦·µ»Ø0
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: parse_web_cmd_http_ServInfoReq()
+**º¯Êı¹¦ÄÜ:  ½âÎö»ñÈ¡Â¼²¥ĞÅÏ¢HTTP Ğ­Òé·µ»ØĞÅÏ¢²¢Á¬½ÓÂ¼²¥·şÎñÆ÷ 
+**ÊäÈë²ÎÊı:  ´æ·Åxml Ä£Ê½post ÉÏ±¨ºó·µ»ØĞÅÏ¢µÄbuffer 
+**Êä³ö²ÎÊı:   NULL
+**·µ»ØÖµ       :  ³É¹¦·µ»Ø0 	
+****************************************************************************
 */
 int32_t parse_web_cmd_http_ServInfoReq(int8_t *buffer);
 
-/**
-* @brief  ½âÎöhttp post ·µ»ØÏûÏ¢ÂëÅĞ¶ÏÉÏ±¨ÓÃ»§ÓëÍ¨µÀĞÅÏ¢ÊÇ·ñÃ½ÌåÖĞĞÄÕı³£½ÓÊÕ 
-* msgcode  -> MSGCODE_HTTP_LIVE_USERS and MSGCODE_HTTP_LIVE_CHANNEL
-* @param  [OUT] NULL
-* @param  [IN] ´æ·Åxml Ä£Ê½post ÉÏ±¨ºó·µ»ØĞÅÏ¢µÄbuffer 
-* @exception  -1
-* @return ³É¹¦·µ»Ø0
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: parse_ResponseMsg()
+**º¯Êı¹¦ÄÜ:  ½âÎöHTTP Ğ­Òé·µ»ØÂëÅĞ¶ÏÖ±²¥½áµãÓëÃ½ÌåÖĞĞÄÍ¨Ñ¶ÊÇ·ñÕı³£
+			       msgcode  -> MSGCODE_HTTP_LIVE_USERS and MSGCODE_HTTP_LIVE_CHANNEL
+**ÊäÈë²ÎÊı:  ´æ·Åxml Ä£Ê½post ÉÏ±¨ºó·µ»ØĞÅÏ¢µÄbuffer 
+**Êä³ö²ÎÊı:   NULL
+**·µ»ØÖµ       :  ³É¹¦·µ»Ø0 	
+****************************************************************************
 */
 int32_t parse_ResponseMsg(int8_t *buffer);
 
-/**
-* @brief  ½âÎöÃ½ÌåÖĞĞÄÏÂ·¢xmlÄ£Ê½TCP ÇëÇóĞÅÏ¢Ìî³äÎªreq_msg_serv_channel_t½á¹¹±äÁ¿ÖĞ
-* msgcode  -> ËùÓĞTCP ÇëÇóÄ£Ê½
-* @param  [OUT] ´æ·ÅÃ½ÌåÖĞĞÄÏÂ·¢TCP ÇëÇóĞÅÏ¢µÄreq_msg_serv_channel_t
-* @param  [OUT]    req_msg_code Ã½ÌåÖĞĞÄÏÂ·¢TCP ÇëÇóÀàĞÍÂë
-* @param  [IN] ´æ·ÅÃ½ÌåÖĞĞÄÏÂ·¢xmlÄ£Ê½TCP  ÇëÇóĞÅÏ¢
-* @exception  -1
-* @return ³É¹¦·µ»Ø0
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ:  parse_web_cmd_tcp()
+**º¯Êı¹¦ÄÜ:  ½âÎöÃ½ÌåÖĞĞÄÏÂ·¢xmlÄ£Ê½TCP ÇëÇóĞÅÏ¢Ìî³äÎªreq_msg_serv_channel_t½á¹¹±äÁ¿ÖĞ
+			       msgcode  -> ËùÓĞTCP ÇëÇóÄ£Ê½
+**ÊäÈë²ÎÊı:  buffer ---´æ·ÅÃ½ÌåÖĞĞÄÏÂ·¢xmlÄ£Ê½TCP  ÇëÇóĞÅÏ¢
+**Êä³ö²ÎÊı:  req_msg_code  ---Ã½ÌåÖĞĞÄÏÂ·¢TCP ÇëÇóÀàĞÍÂë
+			       req_msg_room_id ---´æ·ÅÃ½ÌåÖĞĞÄÏÂ·¢TCP ÇëÇóĞÅÏ¢
+**·µ»ØÖµ       :  ³É¹¦·µ»Ø0 	
+****************************************************************************
 */
 int32_t	parse_web_cmd_tcp(req_msg_serv_channel_t* req_msg_room_id,int32_t* req_msg_code, int8_t 
 *buffer);
 
-/**
-* @brief ¶¨Ê±ÒÔhttpÄ£Ê½ÉÏ±¨Ö±²¥ÔÚÏßÓÃ»§ĞÅÏ¢
-* msgcode  -> MSGCODE_HTTP_LIVE_USERS
-* @param  [OUT] NULL
-* @param  [IN] Ã½ÌåÃ½ÌåÖĞĞÄIP µØÖ·
-* @exception  -1
-* @return ³É¹¦·µ»Ø0
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: web_post_live_user_info()
+**º¯Êı¹¦ÄÜ:  ¶¨Ê±ÒÔhttpÄ£Ê½ÉÏ±¨Ö±²¥ÔÚÏßÓÃ»§ĞÅÏ¢
+**ÊäÈë²ÎÊı:  post_url ---Ã½ÌåÃ½ÌåÖĞĞÄIP µØÖ·
+**Êä³ö²ÎÊı:   NULL
+**·µ»ØÖµ       :  ³É¹¦·µ»Ø0 	
+****************************************************************************
 */
 int32_t web_post_live_user_info(int8_t *post_url);
 
-/**
-* @brief  ¶¨Ê±ÒÔhttpÄ£Ê½ÉÏ±¨Â¼²¥·şÎñÆ÷Í¨µÀĞÅÏ¢
-* msgcode  -> MSGCODE_HTTP_LIVE_CHANNEL
-* @param  [OUT] NULL
-* @param  [IN] Ã½ÌåÃ½ÌåÖĞĞÄIP µØÖ·
-* @exception  -1
-* @return ³É¹¦·µ»Ø0
+/*
+****************************************************************************
+**º¯ÊıÃû³Æ: web_post_channel_update_info()
+**º¯Êı¹¦ÄÜ:  ¶¨Ê±ÒÔhttpÄ£Ê½ÉÏ±¨Â¼²¥·şÎñÆ÷Í¨µÀĞÅÏ¢
+**ÊäÈë²ÎÊı:  post_url ---Ã½ÌåÃ½ÌåÖĞĞÄIP µØÖ·
+**Êä³ö²ÎÊı:   NULL
+**·µ»ØÖµ       :  ³É¹¦·µ»Ø0 	
+****************************************************************************
 */
 int32_t web_post_channel_update_info(int8_t *post_url);
-
-/**
-* @brief  ½áµã½ÓÊÕÃ½ÌåÖĞĞÄTCP ÇëÇóµÄÏß³Ìº¯Êı
-* @param  [OUT] NULL
-* @param  [IN] Á¬½ÓÉÏµÄ¿Í»§¶ËµÄsocket
-* @exception  NULL
-* @return  NULL
-*/
-//static void* create_listen_client_thread(void* arg);
-
-/**
-* @brief  ½áµã½ÓÊÕÃ½ÌåÖĞĞÄhttp ÇëÇóµÄÏß³Ìº¯Êı
-* ´Ëº¯ÊıÖĞ¶ÔTCP ½âÎöºóµÄÇëÇó×ö³öÏàÓ¦µÄ´¦Àí!!!!!!
-* @param  [OUT] NULL
-* @param  [IN] NULL
-* @exception  NULL
-* @return  NULL
-*/
-//static void* create_http_report_thread(void* arg);
-
-/**
-* @brief  ½áµã¼àÌıÃ½ÌåÖĞĞÄtcp Á¬½ÓµÄÏß³Ìº¯Êı
-* ÔÚÆäÖĞÆô¶¯TCP ½ÓÊÕÏß³Ìcreate_listen_client_thread 
-* @param  [OUT] NULL
-* @param  [IN] NULL
-* @exception  NULL
-* @return  NULL
-*/
-//static void* create_web_listen_thread(void* arg);
 
 int32_t	init_web_protoclo_resolve_func(void);
 #endif

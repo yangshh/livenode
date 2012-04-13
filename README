@@ -1,18 +1,18 @@
 编译平台信息：
-64:(suse10-64)
-gcc -v
+64:(centOS6.0-64)
+gcc -v 4.4.4
 
-32:()
+32:(centOS6.0-32)
 gcc -v
 
 依赖静态库信息：
-libxml2 -version 2.5.6 
+libxml2 -version 2.7.8 
 libcurl -version 7.23.1
-
+zlib	-version 1.2.4
 编译：
 make
 封包：
-make pkg
+make pkgs
 清除：
 make clean
 安装：

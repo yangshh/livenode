@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LiveCfg>
+	<UserLimit>1000</UserLimit>
+	<NetCard>eth0</NetCard>
+	<NetBandwidthLimit>600</NetBandwidthLimit>
+</LiveCfg>

@@ -4,6 +4,7 @@
 *.tgz
 *.tar.gz
 *.bz2
+*.orig
 lives
 .svn
 version.h

@@ -12,7 +12,6 @@
 #include <strings.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
-#include <net/if.h>
 #include <net/if_arp.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -29,22 +28,20 @@
 #include "xml_msg_management.h"
 #include "connect_rec_server.h"
 #include "media_msg.h"
-
+#include "reach_socket.h"
+#include "live_cfg.h"
 
 #define		LIST_ENQ						(100)	        //并发最大监听数
-#define             ETH_NAME			   		        "eth0"              // 获取本地第一个网卡IP 
 #define		TCP_LIVE_CHANNELINFO_ALL	        "0.0.0.0"          // TCP信令2 获取全部通道信息
 #define 		WEB_URL_HEAD			                 "http://"                        // web媒体中心地址
 #define 		WEB_URL_BODY			                 "/HttpService.action"  // web媒体中心地址
 #define 		WEB_URL_MAX_LEN	                          	100                                  //web媒体中心地址长度
-  
 #define 		WEB_URL_ERROR_SLEEP                           3				   //获取web媒体中心地址失败延迟时间
-
 
 static web_global_vaiables_t g_web_global_vaiable;
 extern connect_server_info_t g_connect_info[CHANNEL_CONNECT_MAX_NUM];
 int8_t g_web_ip[IP_INFO_LEN] = {0};
-
+// 全局直播结点网络占用率
 
 int32_t get_web_url(char *ip)
 {
@@ -53,14 +50,14 @@ int32_t get_web_url(char *ip)
 	int32_t  url_ip_len = r_strlen(g_web_ip);
 	if(0 == url_ip_len) {
 		printf("[%s] ---get ip failed !!!\n",__func__);
-		return 0;
+		return OPERATION_ERR;
 	}
 	int32_t  url_body_len =  r_strlen(WEB_URL_BODY);
 
 	r_memcpy(ip,WEB_URL_HEAD,url_head_len);
 	r_memcpy(&ip[url_head_len],g_web_ip,url_ip_len);
 	r_memcpy(&ip[url_head_len+url_ip_len],WEB_URL_BODY,url_body_len);
-	return 1;	
+	return OPERATION_SUCC;	
 }
 
 int32_t set_wet_url(char *ip,void *vag)
@@ -68,7 +65,7 @@ int32_t set_wet_url(char *ip,void *vag)
 	int32_t					 p_ip_file =  0;
 	int32_t 					write_file_len = 0;
 
-	int32_t  					return_code = -1;
+	int32_t  					return_code = OPERATION_ERR;
 	web_client_info_ex_t		*p_client_info 	= (web_client_info_ex_t *)vag;
 	web_client_info_ex_t   		  c_client_info ;
 
@@ -80,7 +77,7 @@ int32_t set_wet_url(char *ip,void *vag)
 	{
 		r_strcpy(g_web_ip,ip);		
 		p_ip_file = open(WEB_G_IP_MSG,O_WRONLY|O_CREAT);
-		if(p_ip_file == 0)
+		if(p_ip_file < 0)
 		{
 			printf("[%s]---open g_ip_file is error!\n",__func__);
 		}
@@ -92,54 +89,24 @@ int32_t set_wet_url(char *ip,void *vag)
 				printf("[%s]---write ip_file is error!\n",__func__);
 			}
 			r_close(p_ip_file);
-			return_code = 0;
+			return_code = OPERATION_SUCC;
 		}						
 		printf("[%s]---[g_web_ip] --- is [%s]\n",__func__,g_web_ip);
 	}
 	else
 	{
 		printf("[%s]---r_strcmp is NULL!\n",__func__);
-		return_code = 0;
+		return_code = OPERATION_SUCC;
 	}
 	return return_code;
 }
-
-int32_t fine_local_ip(char *ip)
-{
-	int32_t sock;
-	struct sockaddr_in sin;
-	struct ifreq ifr;
-	
-	sock = r_socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock == -1)
-	{
-		printf("[%s] ---socket is error!\n",__func__);
-		return -1;		
-	}
-	
-	strncpy(ifr.ifr_name, ETH_NAME, IFNAMSIZ);
-	ifr.ifr_name[IFNAMSIZ - 1] = 0;
-	
-	if (ioctl(sock, SIOCGIFADDR, &ifr) < 0)
-	{
-		printf("[%s] ---[ioctl] is error!\n",__func__);
-		r_close(sock);
-		return -1;
-	}
-	
-	r_memcpy(&sin, &ifr.ifr_addr, sizeof(sin));
-	r_memcpy(ip,inet_ntoa(sin.sin_addr),IP_INFO_LEN);
-	r_close(sock);
-	return 0;
-}
-
 
 void judge_user_channel_http_report()
 {
 
 	int8_t  post_url[WEB_URL_MAX_LEN] = {0};
 	r_memset(post_url,0,WEB_URL_MAX_LEN);
-	if(get_web_url(post_url) == 0)
+	if(get_web_url(post_url) == OPERATION_ERR)
 	{
 		printf("[%s]---[get_web_url] is error!\n",__func__);
 		r_sleep(WEB_URL_ERROR_SLEEP);
@@ -174,9 +141,9 @@ int32_t Traverse_gAmarry_free()
 	if(i_loop == CHANNEL_CONNECT_MAX_NUM)
 	{
 		printf("[%s]---[CHANNEL_CONNECT_MAX_NUM] is error!\n",__func__);
-		return -1;
+		return OPERATION_ERR;
 	}
-	return -1;
+	return OPERATION_ERR;
 }
 
 int32_t Traverse_gAmarry_usd(char *rec_server_ip,int32_t *room_amrry)
@@ -194,7 +161,7 @@ int32_t Traverse_gAmarry_usd(char *rec_server_ip,int32_t *room_amrry)
 	if(i_loop == CHANNEL_CONNECT_MAX_NUM && j_loop == 0)
 	{
 		printf("[%s] ---[CHANNEL_CONNECT_MAX_NUM] is error !\n",__func__);
-		return -1;
+		return OPERATION_ERR;
 	}
 	else
 	{
@@ -241,7 +208,7 @@ int32_t msgcode_tcp_rec_serv_func(int8_t *p_buffer,req_msg_serv_channel_t 	 req_
 			r_memset(&cmd_info, 0, sizeof(web_cmd_parse_info_t));
 
 			cmd_info.channel_id = Traverse_gAmarry_free();
-			if(cmd_info.channel_id == -1)
+			if(cmd_info.channel_id == OPERATION_ERR)
 			{
 				ReturnCode = 0;
 				printf("[%s]---[Traverse_gAmarry_free]---no free !\n",__func__);
@@ -263,7 +230,7 @@ int32_t msgcode_tcp_rec_serv_func(int8_t *p_buffer,req_msg_serv_channel_t 	 req_
 		}	
 	}					
 	cap_return_code_xml_resp(&p_buffer[sizeof(int)],ReturnCode);
-	return 0;
+	return OPERATION_SUCC;
 }
 
 int32_t msgcode_tcp_live_channel_func(int8_t *p_buffer,req_msg_serv_channel_t 	 req_msg_room_id)
@@ -271,9 +238,7 @@ int32_t msgcode_tcp_live_channel_func(int8_t *p_buffer,req_msg_serv_channel_t 	 
 	int32_t j_loop_tcp  = 0; 
 	int32_t h_loop_tcp = 0;
 	to_mc_report_live_channel_update_req_tcp_t tcp_live_channel_info;
-
 	r_memset(&tcp_live_channel_info , 0 , sizeof(to_mc_report_live_channel_update_req_tcp_t));
-
 	// 查询直播结点全部通道信息
 	if(r_strcmp(req_msg_room_id.rec_server_ip,TCP_LIVE_CHANNELINFO_ALL)  == 0)
 	{
@@ -333,7 +298,7 @@ int32_t msgcode_tcp_live_channel_func(int8_t *p_buffer,req_msg_serv_channel_t 	 
 		}
 	}
 	cap_to_mc_report_live_channel_update_xml_req_tcp_empty(&p_buffer[sizeof(int)],tcp_live_channel_info);
-	return 0;
+	return OPERATION_SUCC;
 }
 
 int32_t msgcode_tcp_live_users_func(int8_t *p_buffer,req_msg_serv_channel_t 	 req_msg_room_id)
@@ -346,10 +311,9 @@ int32_t msgcode_tcp_live_users_func(int8_t *p_buffer,req_msg_serv_channel_t 	 re
 	if(get_online_user_total() == 0)
 	{
 		printf("[%s]--- [get_online_user_total ]--- no users!\n",__func__);
-		live_user_info.return_code= 1;
-		live_user_info.total_bandwidth = 0;
 		live_user_info.total_users = 0;
 		live_user_info.ip_pool= NULL;
+		get_live_user_info((void **)&temp_user_ips);
 	}
 	else
 	{
@@ -359,19 +323,19 @@ int32_t msgcode_tcp_live_users_func(int8_t *p_buffer,req_msg_serv_channel_t 	 re
 			printf("[%s]---[get_live_user_info ] ---the user_info is error---tcp!\n",__func__);
 			ReturnCode= 0;
 			cap_return_code_xml_resp(&p_buffer[sizeof(int)],ReturnCode);
-			return 0;
+			return OPERATION_SUCC;
 		}
 		else
 		{
-			live_user_info.return_code= 1;
-			live_user_info.total_bandwidth = 0;
 			live_user_info.total_users = get_online_user_total();
 		 	live_user_info.ip_pool = temp_user_ips;
 //			printf("[%s]--- [lives_ip online]  is  ---[%s]\n",__func__,live_user_info.ip_pool);
 		}									
-	}					
+	}
+	live_user_info.return_code= 1;
+	live_user_info.total_bandwidth = 0;
 	cap_live_users_info_xml_resp(&p_buffer[sizeof(int)], live_user_info);
-	return 0;
+	return OPERATION_SUCC;
 }
 
 int32_t msgcode_tcp_sys_info_func(int8_t *p_buffer,req_msg_serv_channel_t 	 req_msg_room_id)
@@ -403,7 +367,7 @@ int32_t msgcode_tcp_sys_info_func(int8_t *p_buffer,req_msg_serv_channel_t 	 req_
 	cpu_sys_info.return_code = 1;
 EXIT:
 	cap_sys_info_xml_resp(&p_buffer[sizeof(int)] , cpu_sys_info);
-	return 0;
+	return OPERATION_SUCC;
 }
 
 int32_t package_web_cmd_http_ServInfoReq(int8_t *buffer)
@@ -416,12 +380,14 @@ int32_t package_web_cmd_http_ServInfoReq(int8_t *buffer)
 	Servers_Info_Req.to_mc_msg_head = req_head;	
 	cap_to_mc_get_recservers_info_xml_req (buffer,Servers_Info_Req);
 	
-	return 0;
+	return OPERATION_SUCC;
 }
 
 int32_t package_web_cmd_http_LiveUpdateReq(int8_t *buffer)
 {
 	int8_t *temp_user_ips =NULL;
+	int8_t *ifname = NULL;
+	ifname = get_live_cfg_NetCard();
 	to_mc_report_live_users_info_req_t report_msg_user_update;
 	r_memset(&report_msg_user_update , 0 ,sizeof(to_mc_report_live_users_info_req_t));
 	if(get_online_user_total() == 0)
@@ -429,9 +395,9 @@ int32_t package_web_cmd_http_LiveUpdateReq(int8_t *buffer)
 		printf("[%s] ---  no user!\n",__func__);
 		report_msg_user_update.to_mc_msg_head.msg_code = MSGCODE_HTTP_LIVE_USERS;
 		report_msg_user_update.report_live_users_info.total_users = 0;
-		if(fine_local_ip(report_msg_user_update.report_live_users_info.node_server_ip)== -1)
+		if(get_local_ip(ifname, report_msg_user_update.report_live_users_info.node_server_ip)== OPERATION_ERR)
 		{
-			printf("[%s] --- [fine_local_ip] ---  error!\n",__func__);
+			printf("[%s] --- [get_local_ip] ---  error!\n",__func__);
 			return -2;
 		}
 		report_msg_user_update.report_live_users_info.ip_pool = NULL;
@@ -454,7 +420,7 @@ int32_t package_web_cmd_http_LiveUpdateReq(int8_t *buffer)
 		report_msg_user_update.to_mc_msg_head.msg_code = MSGCODE_HTTP_LIVE_USERS;
 		report_msg_user_update.report_live_users_info.ip_pool = temp_user_ips;
 		report_msg_user_update.report_live_users_info.total_bandwidth = 0 ;
-		if(fine_local_ip(report_msg_user_update.report_live_users_info.node_server_ip)== -1)
+		if(get_local_ip(ifname, report_msg_user_update.report_live_users_info.node_server_ip)== -1)
 		{
 			printf("[%s]---[fine_local_ip] ---error!\n",__func__);
 			return  -2;
@@ -517,7 +483,7 @@ int32_t package_web_cmd_http_LiverChannelUpdateReq(int8_t *buffer)
 	}	
 	cap_to_mc_report_live_channel_update_xml_req(buffer,report_msg_channel_update);
 	r_free(report_msg_channel_update.to_mc_report_room_info);
-	return 0;
+	return OPERATION_SUCC;
 }
 
 int32_t parse_web_cmd_http_ServInfoReq(int8_t *buffer)
@@ -536,11 +502,15 @@ int32_t parse_web_cmd_http_ServInfoReq(int8_t *buffer)
 	int32_t i_loop = 0;
 	int32_t j_loop =0 ; 
 
-	int32_t rets = -1;
+	int32_t rets = OPERATION_ERR;
 
 	r_memset(&cmd_info,0,sizeof(web_cmd_parse_info_t));
 	cmd_info.rec_channel = -1;
-	init_dom_tree(parse_xml_servinfo, buffer);
+	
+	if(NULL == init_dom_tree(parse_xml_servinfo, buffer)) {
+		printf("[%s]---init_dom_tree is error!\n",__func__);
+		goto EXIT;
+	}
 	
 	// 1.2.1 判断是否是xml 文件体		
 	if(is_resp_msg(parse_xml_servinfo->proot) != 1)
@@ -575,7 +545,7 @@ int32_t parse_web_cmd_http_ServInfoReq(int8_t *buffer)
 		printf("[%s]---[get_resp_recserver_info_node] is error!\n",__func__);
 		goto EXIT;
 	}
-	int32_t pnode_servinfo_node_num = get_current_samename_node_nums(pnode_servinfo_resp);
+	int32_t pnode_servinfo_node_num = get_current_samename_node_nums(pnode_servinfo_resp, parse_xml_servinfo->pdoc);
 	if(pnode_servinfo_node_num == 0)
 	{
 		printf("[%s]---[pnode_servinfo_node_num] is NULL!\n",__func__);
@@ -605,7 +575,7 @@ int32_t parse_web_cmd_http_ServInfoReq(int8_t *buffer)
 			printf("[%s]--- [get_resp_room_id_node] is error!\n",__func__);
 			goto EXIT;
 		}
-		int32_t same_node_roomid_num = get_current_samename_node_nums(pnode_room_id);	
+		int32_t same_node_roomid_num = get_current_samename_node_nums(pnode_room_id, parse_xml_servinfo->pdoc);	
 		if(same_node_roomid_num == 0)
 		{
 			printf("[%s]--- [same_node_roomid_num] is NULL!\n",__func__);
@@ -614,7 +584,7 @@ int32_t parse_web_cmd_http_ServInfoReq(int8_t *buffer)
 		for(j_loop =0 ; j_loop <same_node_roomid_num; j_loop ++)
 		{
 			cmd_info.channel_id = Traverse_gAmarry_free();
-			if(cmd_info.channel_id == -1)
+			if(cmd_info.channel_id == OPERATION_ERR)
 			{
 				printf("[%s]--- there is no free space!\n",__func__);
 				break;
@@ -647,7 +617,7 @@ int32_t parse_web_cmd_http_ServInfoReq(int8_t *buffer)
 		pnode_servinfo_resp = pnode_servinfo_resp->next;			
 	}		
 
-	rets = 0;
+	rets = OPERATION_SUCC;
 EXIT:	
 	free(parse_xml_servinfo);
 	parse_xml_servinfo = NULL;
@@ -655,7 +625,7 @@ EXIT:
 	pnode_servinfo_resp= NULL ;
 	pnode_serv_ip = NULL;
 	pnode_room_id = NULL;
-	if(rets == 0)
+	if(rets == OPERATION_SUCC)
 	{
 		printf("[%s]---htttp_1.1 is ok!\n",__func__);
 	}
@@ -671,8 +641,11 @@ int32_t parse_ResponseMsg(int8_t *buffer)
 	int8_t return_code_str[WEB_TEMP_MSG_LEN] = {0};
 	parse_xml_t *parse_xml_user = (parse_xml_t *)r_malloc(sizeof(parse_xml_t));
 	xmlNodePtr pnode_return_code = NULL;
-	int32_t return_code = -1; 
-	init_dom_tree(parse_xml_user, buffer);			
+	int32_t return_code = OPERATION_ERR; 
+	if(NULL == init_dom_tree(parse_xml_user, buffer)) {
+		printf("[%s] ---[init_dom_tree] is error!\n",__func__);
+		goto EXIT;
+	}		
 	if(is_resp_msg(parse_xml_user->proot) != 1)
 	{	
 		printf("[%s] ---[is_resp_msg] is error!\n",__func__);
@@ -709,10 +682,13 @@ int32_t	parse_web_cmd_tcp(req_msg_serv_channel_t* req_msg_room_id,int32_t* req_m
 	
 	parse_xml_t *parse_xml_tcp = (parse_xml_t *)r_malloc(sizeof(parse_xml_t));
 	xmlNodePtr pnode_tcp =NULL;
-	init_dom_tree(parse_xml_tcp,buffer);
+	if(NULL == init_dom_tree(parse_xml_tcp,buffer)){
+		printf("[%s] ---[init_dom_tree] is error!\n",__func__);
+		goto EXIT;
+	}
 	int8_t temp_channel_ID[WEB_TEMP_MSG_LEN] = {0};
 
-	int32_t return_code = -1;
+	int32_t return_code = OPERATION_ERR;
 	int32_t i_loop = 0;
 	
 	req_msg_head_t req_msg_head;
@@ -769,7 +745,7 @@ int32_t	parse_web_cmd_tcp(req_msg_serv_channel_t* req_msg_room_id,int32_t* req_m
 				printf("[%s] ---[MSGCODE_TCP_REC_SERV]---[get_req_setRecServerChannel_room_id_node] is error!\n",__func__);
 				goto EXIT;
 			}
-			int32_t same_node_num = get_current_samename_node_nums(pnode_tcp);
+			int32_t same_node_num = get_current_samename_node_nums(pnode_tcp, parse_xml_tcp->pdoc);
 			if(same_node_num == 0)
 			{
 				printf("[%s] ---[MSGCODE_TCP_REC_SERV]---[same_node_num] is NULL!\n",__func__);
@@ -868,7 +844,7 @@ int32_t	parse_web_cmd_tcp(req_msg_serv_channel_t* req_msg_room_id,int32_t* req_m
 		default:
 				break;
 	}
-	return_code = 0;
+	return_code = OPERATION_SUCC;
 EXIT:
 	if(parse_xml_tcp->pdoc != NULL)
 		release_dom_tree(parse_xml_tcp->pdoc);
@@ -888,7 +864,7 @@ int32_t web_post_live_user_info(int8_t *post_url)
 	int32_t return_num_post = 0;
 	int32_t recode_liveupdatereq = 0;
 
-	int32_t return_code = -1;
+	int32_t return_code = OPERATION_ERR;
 	
 	r_memset(post_recv_buffer,0,WEB_MSG_LEN);
 	r_memset(post_to_buffer,0,WEB_MSG_LEN);
@@ -928,7 +904,7 @@ int32_t web_post_live_user_info(int8_t *post_url)
 		printf("[%s]---[parse_ResponseMsg] --- error!\n",__func__);
 		goto EXIT;
 	}
-	return_code =  0;	
+	return_code = OPERATION_SUCC;	
 EXIT:
 	r_free(post_recv_buffer);
 	r_free(post_to_buffer);
@@ -938,15 +914,15 @@ EXIT:
 // http 上报录播服务器通道信息
 int32_t web_post_channel_update_info(int8_t *post_url)
 {
-	int8_t *post_recv_buffer = malloc(WEB_MSG_LEN);
-	int8_t *post_to_buffer = malloc(WEB_MSG_LEN);
+	int8_t *post_recv_buffer = r_malloc(WEB_MSG_LEN);
+	int8_t *post_to_buffer = r_malloc(WEB_MSG_LEN);
 	int32_t post_recv_buffer_len = WEB_MSG_LEN;
 	int32_t post_to_buf_len = 0;
 
 	int32_t ResponseMsg_recode = 0 ;
 	int32_t return_num_post = 0;
 
-	int32_t return_code = -1;
+	int32_t return_code = OPERATION_ERR;
 	
 	r_memset(post_recv_buffer,0,WEB_MSG_LEN);
 	r_memset(post_to_buffer,0,WEB_MSG_LEN);
@@ -980,7 +956,7 @@ int32_t web_post_channel_update_info(int8_t *post_url)
 		printf("[%s]---parse_ResponseMsg is error!\n",__func__);
 		goto EXIT;
 	}
-	return_code = 0;
+	return_code = OPERATION_SUCC;
 EXIT:
 	r_free(post_recv_buffer);
 	r_free(post_to_buffer);
@@ -995,6 +971,7 @@ static void restart_live(void)
 	system(cmd);
 }
 
+//结点接收媒体中心TCP 请求的线程函数
 static void* create_listen_client_thread(void* arg)
 {
 	web_client_info_ex_t		*p_client_info 	= (web_client_info_ex_t *)arg;
@@ -1024,6 +1001,7 @@ static void* create_listen_client_thread(void* arg)
 
 	while(1)
 	{
+		// 1.接受媒体中心TCP 请求(xml 格式包)
 		r_memset(req_msg_room_id.rec_server_ip,0,IP_ADDR_LEN);
 		r_memset(req_msg_room_id.user_ip,0,IP_ADDR_LEN);
 		req_msg_room_id.ChannelID = -1;
@@ -1055,7 +1033,8 @@ static void* create_listen_client_thread(void* arg)
 		
 		printf("[%s]---tcp_buf_len [%d]---tcp_buf ---",__func__,ret);
 		printf(" %s\n",p_buffer);
-		
+
+		// 2.  解析媒体中心TCP 请求(xml 格式包) 
 		if(parse_web_cmd_tcp(&req_msg_room_id,&req_code,p_buffer) == -1)
 		{
 			printf("[%s]---[parse_web_cmd_tcp] --- error!\n",__func__);
@@ -1075,6 +1054,8 @@ static void* create_listen_client_thread(void* arg)
 			}
 		}
 		r_memset(p_buffer,0,WEB_MSG_LEN);
+
+		// 3. 根据TCP 请求msgcode 进行相应处理
 		switch(req_code)
 		{
 			case MSGCODE_TCP_REC_SERV:
@@ -1120,6 +1101,7 @@ static void* create_listen_client_thread(void* arg)
 		printf("[%s]---[TCP send to mc the len of xml]---\n",__func__);
 		printf("%d\n",send_buf_len);
 
+		// 4. 直播结点根据处理情况做出相应回应发送应答给媒体中心
 		send_buf_len = r_strlen(&p_buffer[sizeof(int)]);
 		r_memcpy(p_buffer,&send_buf_len,sizeof(int));
 		send_buf_len = send_buf_len +sizeof(int);	
@@ -1141,6 +1123,7 @@ EXIT:
 	return NULL;
 }
 
+//结点监听媒体中心tcp 连接的线程函数
 static void* create_web_listen_thread(void* arg)
 {
 	int32_t						listen_socket	= 0;
@@ -1154,6 +1137,7 @@ static void* create_web_listen_thread(void* arg)
 
 	sem_init(&g_web_global_vaiable.m_sem, 0, 0);
 
+	// 1. 初始化网络环境
 	listen_socket = r_socket(AF_INET, SOCK_STREAM, 0);
 
 	if(listen_socket < 0)
@@ -1181,12 +1165,12 @@ static void* create_web_listen_thread(void* arg)
 		printf("[%s]---[listen] is error!\n",__func__);
 		goto EXIT;
 	}
-	
 	while(1)
 	{
 		r_memset(&client_info,0,sizeof(web_client_info_ex_t));
 		len = sizeof(struct sockaddr_in);	
 		printf("[%s]--- beging to accept..............\n",__func__);
+		// 2. 监听媒体中心请求连接
 		client_socket = accept(listen_socket, (void*)&client_info.m_client_addr,(int32_t *)&len);
 		if(client_socket < 0)
 		{
@@ -1194,42 +1178,21 @@ static void* create_web_listen_thread(void* arg)
 			fprintf(stderr,"Accept error:%s\n",strerror(errno));
   			switch(errno)
  			 {
-  			case EBADF:
- 				 printf("+++++++++EBADF\n");
- 			 break;
-  			case EFAULT:
-				  printf("+++++++++EFAULT\n");
-  			break;
-  			case ENOTSOCK:
-  				printf("+++++++++ENOTSOCK\n");
- 			 break;
-			case EOPNOTSUPP:
-  				printf("+++++++++EOPNOTUPP\n");
-  			break;
-			
-  			case EPERM:
-				printf("+++++++++EPERM\n");
+    			case EPERM:
+				printf("[%s]---EPERM\n",__func__);
 			continue;
   			case ENOBUFS:
-				printf("+++++++++ENOBUFS\n");
+				printf("[%s]---ENOBUFS\n",__func__);
 			continue;
-
-			case ENOMEM:
-  				printf("+++++++++THis\n");
-			break;
- 		         case EINVAL:
-  				printf("+++++++++EINVAL\n");
-  			break;
   			default:
-  				printf("+++++++++Other\n");
+				printf("[%s]---others error!\n",__func__);
   			}
-			
 		}
-
 		opt = 1;
 		r_setsockopt(client_socket, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt));
 		client_info.m_client_socket = client_socket;
 
+		// 3. 启动TCP 请求处理线程函数
 		if (r_pthread_create(&listen_client_thread, NULL, 
 			create_listen_client_thread, &client_info)) 
 		{
@@ -1245,7 +1208,7 @@ EXIT:
 	return NULL;
 }
 
-
+//结点接收媒体中心http 请求的线程函数
 static void* create_http_report_thread(void* arg)
 {
 	int8_t *post_recv_buffer = r_malloc(WEB_MSG_LEN);
@@ -1262,9 +1225,10 @@ static void* create_http_report_thread(void* arg)
 		goto EXIT;
 	}
 
+	// 1. 通过内存或是文件获取媒体中心地址
 	int32_t p_ip_file =  0;
 	p_ip_file = open(WEB_G_IP_MSG,O_RDONLY);
-	if(p_ip_file == 0)
+	if(p_ip_file < 0)
 	{
 		printf("[%s]---open g_ip_file is error!\n",__func__);
 	}
@@ -1274,6 +1238,7 @@ static void* create_http_report_thread(void* arg)
 		printf("[%s]---g_web_ip from ip_file is ---[%s]\n",__func__,g_web_ip);
 		r_close(p_ip_file);
 	}	
+	// *以下代码用于隔离媒体中心交互模块，直连录播服务器
 #if ONLY_REC
 	
 	web_cmd_parse_info_t	cmd_info;
@@ -1300,6 +1265,7 @@ static void* create_http_report_thread(void* arg)
 	goto EXIT;
 
 #endif
+	// 2. HTTP 协议1 结点向媒体中心请求获取注册录播信息并处理
 	if(package_web_cmd_http_ServInfoReq(post_to_buffer) == -1)
 	{
 		printf("[%s]---[package_web_cmd_http_ServInfoReq] is error!\n",__func__);
@@ -1313,13 +1279,13 @@ static void* create_http_report_thread(void* arg)
 	while(1)
 	{
 		r_memset(post_url,0,WEB_URL_MAX_LEN);
-		if(get_web_url(post_url) == 0)
+		if(get_web_url(post_url) == OPERATION_ERR)
 		{
 			r_sleep(WEB_URL_ERROR_SLEEP);
 			continue;
 		}
 		printf("[%s]---[web_1.1 url ] ------- [%s]\n",__func__,post_url);
-		
+		r_memset(post_recv_buffer,0,WEB_MSG_LEN);
 		return_num_post = mid_http_post(post_url, post_to_buffer, post_to_buf_len, post_recv_buffer, &post_recv_buffer_len);
 		if(return_num_post == -1)
 		{
@@ -1336,6 +1302,8 @@ static void* create_http_report_thread(void* arg)
 	printf("[%s]---recv buf_1.3 is ----\n",__func__);
 	printf("%s\n",post_recv_buffer);
 #endif
+
+	// 3. 直播结点循环上报HTTP 协议2、3 在线用户数以及通道信息
 	if(parse_web_cmd_http_ServInfoReq(post_recv_buffer) == -1)
 	{
 		printf("[%s]---parse_web_cmd_http_servinfo is error!\n",__func__);
@@ -1359,12 +1327,13 @@ EXIT:
 	
 }
 
+
+//初始化直播结点与媒体中心交互模块
 int32_t	init_web_protoclo_resolve_func(void)
 {
 	pthread_t   p_web_listen_thread;
 	pthread_t   p_http_report_thread;
 	// 读配置文件
-
 	g_connect_info_init();
 	
 	if (r_pthread_create(&p_web_listen_thread, NULL, 
@@ -1380,6 +1349,11 @@ int32_t	init_web_protoclo_resolve_func(void)
 		printf("[%s]---Failed to create_http_report_thread = %s\n",__func__,strerror(errno));
 		return CREATE_THREAD_ERR;	
 	}
+
+	
 	return OPERATION_SUCC;
 }
+
+
+
 

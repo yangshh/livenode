@@ -9,6 +9,7 @@ mkdir -p $LIVEDIR
 mkdir -p $INITD
 cp -rf lives $LIVEDIR
 cp -rf lived $LIVEDIR
+cp -rf LiveCfg.xml $LIVEDIR
 cp -rf livesd $INITD
 ln -s $INITD/livesd $RC3D/S99livesd 
 ln -s $INITD/livesd $RC5D/S99livesd

@@ -225,6 +225,7 @@ int32_t del_live_user(int8_t *ip, int32_t chid)
 		{
 			if(u->m_channel == chid && 0 == r_strcmp((const int8_t *)ip, (const int8_t *)u->m_ip)) 
 			{
+				printf("[del_live_user] ------------------ del user ok !!\n");
 				close_client(u);
 				user_num++;
 			}
@@ -294,7 +295,8 @@ int32_t get_live_user_info(void **buf)
 {	
 	int32_t ut = get_online_user_total();
 	if(ut == 0) {
-		return 0;
+		memset(live_user_info, 0, (MAX_USERS * UI_LEN));
+		return -2;
 	}
 	int8_t *lui = r_malloc(ut * UI_LEN);
 	if(NULL == lui) {
