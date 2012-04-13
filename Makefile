@@ -7,7 +7,8 @@ BITS = 64
 endif
 $(shell mkdir -p objs) 
 #版本
-VERSION=$(shell grep "LIVE_VERSION" src/test/main.c  |sed 's/"/ /g' |awk '{print $$3}'|sed -e '1!d')
+#VERSION=$(shell grep "LIVE_VERSION" src/test/main.c  |sed 's/"/ /g' |awk '{print $$3}'|sed -e '1!d')
+VERSION=$(shell git describe --dirty --always)
 #日期
 DATE=$(shell date +%Y%m%d)
 # 目标文件名字
