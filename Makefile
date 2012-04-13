@@ -64,7 +64,6 @@ LIBS += '-Wl,--start-group' $(LOCAL_LIBS) '-Wl,--end-group'
 #CFLAGS = -g -Wall
 #CFLAGS := -O2 -Wall -Wno-strict-aliasing
 CFLAGS = -O2
-all:$(TARGET)
 all:new_header $(TARGET)
 new_header:
 	@sed -e "s#<version>#$$(git describe --dirty --always)#g" < version.h.in > version.h.tmp
