@@ -46,6 +46,7 @@ INCLUDE = -I./src/live -I./src/msg -I./src/reach_share\
  -I./src/intermedia/http/curl$(BITS) -I./src/intermedia/xml/libxml\
  -I./src/intermedia/connect_rec_server -I./src/intermedia/http\
  -I./src/intermedia/sysinfo -I./src/intermedia/xml\
+ -I./\
  -I./src/log
 # 链接库
 LIBS := -lpthread
