@@ -13,7 +13,7 @@ VERSION=$(shell git describe --dirty --always)
 DATE=$(shell date +%Y%m%d)
 # 目标文件名字
 TARGET = lives
-APP = lives.v$(VERSION).$(ARCH)
+APP = lives.$(VERSION).$(ARCH)
 #录播写h264文件
 REC_F = 0
 #指定录播ip
