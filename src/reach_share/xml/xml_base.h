@@ -83,7 +83,7 @@ curNode);
 * @note  none
 * @remarks  none
 */
-int get_current_samename_node_nums(xmlNodePtr curNode, xmlDocPtr pdoc);
+int get_current_samename_node_nums(xmlNodePtr curNode);
 
 /**
 * @brief 增加新的节点

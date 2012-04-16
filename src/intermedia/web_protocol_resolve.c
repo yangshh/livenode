@@ -545,7 +545,7 @@ int32_t parse_web_cmd_http_ServInfoReq(int8_t *buffer)
 		printf("[%s]---[get_resp_recserver_info_node] is error!\n",__func__);
 		goto EXIT;
 	}
-	int32_t pnode_servinfo_node_num = get_current_samename_node_nums(pnode_servinfo_resp, parse_xml_servinfo->pdoc);
+	int32_t pnode_servinfo_node_num = get_current_samename_node_nums(pnode_servinfo_resp);
 	if(pnode_servinfo_node_num == 0)
 	{
 		printf("[%s]---[pnode_servinfo_node_num] is NULL!\n",__func__);
@@ -575,7 +575,7 @@ int32_t parse_web_cmd_http_ServInfoReq(int8_t *buffer)
 			printf("[%s]--- [get_resp_room_id_node] is error!\n",__func__);
 			goto EXIT;
 		}
-		int32_t same_node_roomid_num = get_current_samename_node_nums(pnode_room_id, parse_xml_servinfo->pdoc);	
+		int32_t same_node_roomid_num = get_current_samename_node_nums(pnode_room_id);	
 		if(same_node_roomid_num == 0)
 		{
 			printf("[%s]--- [same_node_roomid_num] is NULL!\n",__func__);
@@ -745,7 +745,7 @@ int32_t	parse_web_cmd_tcp(req_msg_serv_channel_t* req_msg_room_id,int32_t* req_m
 				printf("[%s] ---[MSGCODE_TCP_REC_SERV]---[get_req_setRecServerChannel_room_id_node] is error!\n",__func__);
 				goto EXIT;
 			}
-			int32_t same_node_num = get_current_samename_node_nums(pnode_tcp, parse_xml_tcp->pdoc);
+			int32_t same_node_num = get_current_samename_node_nums(pnode_tcp);
 			if(same_node_num == 0)
 			{
 				printf("[%s] ---[MSGCODE_TCP_REC_SERV]---[same_node_num] is NULL!\n",__func__);

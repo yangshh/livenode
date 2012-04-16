@@ -197,7 +197,7 @@ int get_recserver_info(recserver_info_t *recserver_info, xmlDocPtr pdoc, xmlNode
 	get_resp_recserver_ip_node(&recserver_ip_node, recservers_info_node);
 	get_current_node_value(recserver_info->recserver_ip, pdoc, recserver_ip_node);
 	get_resp_room_id_node(&room_id_node, recservers_info_node);
-	total_rooms = get_current_samename_node_nums(room_id_node, pdoc);
+	total_rooms = get_current_samename_node_nums(room_id_node);
 	while(total_rooms) {
 		get_current_node_value(room_id, pdoc, room_id_node);
 		*(recserver_info->room_id_pool) = atoi(room_id);
