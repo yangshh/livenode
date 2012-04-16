@@ -70,17 +70,16 @@ int32_t get_current_node_value(char *value, int32_t value_len, xmlDocPtr pdoc,  
 }
 
 
-int get_current_samename_node_nums(xmlNodePtr curNode, xmlDocPtr pdoc)
+int get_current_samename_node_nums(xmlNodePtr curNode)
 {
 	int i = 0;
 	xmlChar *key = NULL;
-	key = xmlNodeListGetString(pdoc, curNode->xmlChildrenNode, 1);
+	key =  curNode->name;
 
 	while(NULL != curNode) {
-		if(!xmlStrcmp(xmlNodeListGetString(pdoc, curNode->xmlChildrenNode, 1), key)) {
+		if(!xmlStrcmp(curNode->name, key))  {
 			i ++;
 		}
-
 		curNode = curNode->next;
 	}
 
