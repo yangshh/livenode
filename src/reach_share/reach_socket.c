@@ -51,7 +51,11 @@ int32_t get_local_ip(int8_t *eth, int8_t *ipaddr)
 	}
 
 	/* Get IP Address */
-	strncpy(ifr.ifr_name, eth, IF_NAMESIZE);
+	if(NULL == eth) {
+		strcpy(ifr.ifr_name, "eth0");
+	} else {
+		strncpy(ifr.ifr_name, eth, IF_NAMESIZE);
+	}
 	ifr.ifr_name[IF_NAMESIZE] = '\0';
 
 	if(ioctl(sock_fd, SIOCGIFADDR, &ifr) < 0) {

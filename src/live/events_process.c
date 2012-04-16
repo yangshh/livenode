@@ -116,6 +116,9 @@ void* events_process(void *arg)
 	int8_t local_ip[IP_LEN] = {0};
 	int8_t *ifname = NULL;
 	ifname = get_live_cfg_NetCard();
+	if(NULL == ifname) {
+		printf("get cfg netcard failed!!!\n");
+	}
 	if(get_local_ip(ifname, local_ip) < 0) {
 		printf("[events_process] ----error----- [%s:%s]\n", ifname, local_ip);
 	}
