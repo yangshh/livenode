@@ -299,7 +299,7 @@ int32_t net_recv_process(user_t *u)
 	int32_t sbuf_len = 0;
 	int8_t *rp = u->rbuf;
 	int8_t *sp = u->sbuf;
-
+	
 	while(1) {
 		//printf("----------1----------\n");
 		ret = async_recv_data(u->m_fd, rp, MSG_HEAD_LEN);
@@ -345,7 +345,7 @@ int32_t net_recv_process(user_t *u)
 				online_user = get_online_user_total();
 				printf("MSG_TYPE_LOGIN : [%d] ---[%d]\n", online_user, get_net_occupancy_rate());
 
-				if(get_live_cfg_NetBandwidthLimit() <= get_net_occupancy_rate()) {
+				if((get_live_cfg_NetBandwidthLimit() <= get_net_occupancy_rate()) || (get_live_cfg_UserLimit() <= online_user)) {
 					user_login = USER_LOGIN_MAXUSERS;
 					u->m_is_send = -1;
 					break;
